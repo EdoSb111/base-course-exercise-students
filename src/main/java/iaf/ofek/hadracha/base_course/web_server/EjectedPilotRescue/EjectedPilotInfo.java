@@ -20,6 +20,14 @@ public class EjectedPilotInfo implements Entity<EjectedPilotInfo> {
      */
     public String rescuedBy;
 
+    public String getRescuedBy() {
+        return rescuedBy;
+    }
+
+    public void setRescuedBy(String rescuedBy) {
+        this.rescuedBy = rescuedBy;
+    }
+
     @Override
     public int getId() {
         return id;

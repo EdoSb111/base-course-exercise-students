@@ -1,5 +1,6 @@
 package iaf.ofek.hadracha.base_course.web_server.EjectedPilotRescue;
 
+import iaf.ofek.hadracha.base_course.web_server.AirSituation.Airplane;
 import iaf.ofek.hadracha.base_course.web_server.Data.CrudDataBase;
 import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
 import iaf.ofek.hadracha.base_course.web_server.Utilities.ListOperations;
@@ -30,7 +31,8 @@ public class EjectionsImporter {
     public String EJECTION_SERVER_URL;
     @Value("${ejections.namespace}")
     public String NAMESPACE;
-
+    @Autowired
+    public AirplanesAllocationManager airplanesAllocationManager;
 
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -53,6 +55,12 @@ public class EjectionsImporter {
 
     public void updateRescueEjection(int ejectionId, String clientId) {
         EjectedPilotInfo ejectedPilotInfo = dataBase.getByID(ejectionId, EjectedPilotInfo.class);
+
+        if (ejectedPilotInfo.getRescuedBy() == null) {
+            ejectedPilotInfo.setRescuedBy(clientId);
+            dataBase.update(ejectedPilotInfo);
+            airplanesAllocationManager.allocateAirplanesForEjection(ejectedPilotInfo, clientId);
+        }
     }
 
     private void updateEjections() {

@@ -11,7 +11,6 @@ import java.util.List;
 @RequestMapping("/ejectedPilotRescue")
 public class EjectedPilotRescueRestController {
 
-    @Autowired
     private EjectionsImporter ejectionsImporter;
 
     public EjectedPilotRescueRestController( @Autowired EjectionsImporter ejectionsImporter) {
@@ -24,7 +23,7 @@ public class EjectedPilotRescueRestController {
     }
 
     @GetMapping("/takeResponsibility")
-    public void test(@CookieValue(value = "client-id", defaultValue = "") String clientId, @RequestParam int ejectionId) {
-
+    public void takeResponsibility(@CookieValue(value = "client-id", defaultValue = "") String clientId, @RequestParam int ejectionId) {
+        ejectionsImporter.updateRescueEjection(ejectionId, clientId);
     }
 }
