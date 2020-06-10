@@ -47,6 +47,10 @@ public class EjectionsImporter {
 
     }
 
+    public List<EjectedPilotInfo> getAllEjections() {
+        return dataBase.getAllOfType(EjectedPilotInfo.class);
+    }
+
     private void updateEjections() {
         try {
             List<EjectedPilotInfo> ejectionsFromServer;
