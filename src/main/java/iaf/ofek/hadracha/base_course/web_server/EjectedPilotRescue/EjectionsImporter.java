@@ -51,6 +51,10 @@ public class EjectionsImporter {
         return dataBase.getAllOfType(EjectedPilotInfo.class);
     }
 
+    public void updateRescueEjection(int ejectionId, String clientId) {
+        EjectedPilotInfo ejectedPilotInfo = dataBase.getByID(ejectionId, EjectedPilotInfo.class);
+    }
+
     private void updateEjections() {
         try {
             List<EjectedPilotInfo> ejectionsFromServer;
