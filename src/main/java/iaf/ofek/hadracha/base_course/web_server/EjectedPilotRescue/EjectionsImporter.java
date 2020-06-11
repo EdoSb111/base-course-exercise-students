@@ -1,6 +1,7 @@
 package iaf.ofek.hadracha.base_course.web_server.EjectedPilotRescue;
 
 import iaf.ofek.hadracha.base_course.web_server.AirSituation.Airplane;
+import iaf.ofek.hadracha.base_course.web_server.Data.Coordinates;
 import iaf.ofek.hadracha.base_course.web_server.Data.CrudDataBase;
 import iaf.ofek.hadracha.base_course.web_server.Data.Entity;
 import iaf.ofek.hadracha.base_course.web_server.Utilities.ListOperations;
@@ -32,7 +33,7 @@ public class EjectionsImporter {
     @Value("${ejections.namespace}")
     public String NAMESPACE;
     @Autowired
-    public AirplanesAllocationManager airplanesAllocationManager;
+    private AirplanesAllocationManager airplanesAllocationManager;
 
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -65,36 +66,43 @@ public class EjectionsImporter {
 
     private void updateEjections() {
         try {
-            List<EjectedPilotInfo> ejectionsFromServer;
-            ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
-                    EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
-                    null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
-                    });
-            ejectionsFromServer = responseEntity.getBody();
+            List<EjectedPilotInfo> ejectionsFromServer = ejectionsFromServer();
+
             if (ejectionsFromServer != null) {
-                for(EjectedPilotInfo ejectedPilotInfo: ejectionsFromServer) {
-                    ejectedPilotInfo.coordinates.lat += SHIFT_NORTH;
-                }
+                shiftCoordinatesNorth(ejectionsFromServer);
             }
-            List<EjectedPilotInfo> updatedEjections = ejectionsFromServer;
-            List<EjectedPilotInfo> previousEjections = dataBase.getAllOfType(EjectedPilotInfo.class);
 
-            List<EjectedPilotInfo> addedEjections = ejectionsToAdd(updatedEjections, previousEjections);
-            List<EjectedPilotInfo> removedEjections = ejectionsToRemove(updatedEjections, previousEjections);
+            replaceCurrentEjections(ejectionsFromServer);
 
-            addedEjections.forEach(dataBase::create);
-            removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
         } catch (RestClientException e) {
             System.err.println("Could not get ejections: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private List<EjectedPilotInfo> ejectionsToRemove(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
-        return listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
+    private void replaceCurrentEjections(List<EjectedPilotInfo> ejectionsFromServer) {
+        List<EjectedPilotInfo> updatedEjections = ejectionsFromServer;
+        List<EjectedPilotInfo> previousEjections = dataBase.getAllOfType(EjectedPilotInfo.class);
+
+        List<EjectedPilotInfo> addedEjections = listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
+        List<EjectedPilotInfo> removedEjections = listOperations.subtract(previousEjections, updatedEjections, new Entity.ByIdEqualizer<>());
+
+        addedEjections.forEach(dataBase::create);
+        removedEjections.stream().map(EjectedPilotInfo::getId).forEach(id -> dataBase.delete(id, EjectedPilotInfo.class));
     }
 
-    private List<EjectedPilotInfo> ejectionsToAdd(List<EjectedPilotInfo> updatedEjections, List<EjectedPilotInfo> previousEjections) {
-        return listOperations.subtract(updatedEjections, previousEjections, new Entity.ByIdEqualizer<>());
+    private void shiftCoordinatesNorth(List<EjectedPilotInfo> ejectionsFromServer) {
+        for(EjectedPilotInfo ejectedPilotInfo: ejectionsFromServer) {
+            ejectedPilotInfo.setCoordinates(new Coordinates(ejectedPilotInfo.getCoordinates().lat + SHIFT_NORTH,
+                                                                ejectedPilotInfo.getCoordinates().lon));
+        }
+    }
+
+    private List<EjectedPilotInfo> ejectionsFromServer() {
+        ResponseEntity<List<EjectedPilotInfo>> responseEntity = restTemplate.exchange(
+                EJECTION_SERVER_URL + "/ejections?name=" + NAMESPACE, HttpMethod.GET,
+                null, new ParameterizedTypeReference<List<EjectedPilotInfo>>() {
+                });
+        return responseEntity.getBody();
     }
 }

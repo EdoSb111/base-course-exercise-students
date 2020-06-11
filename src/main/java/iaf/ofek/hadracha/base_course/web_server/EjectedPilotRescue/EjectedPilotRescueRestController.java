@@ -18,7 +18,7 @@ public class EjectedPilotRescueRestController {
     }
 
     @GetMapping("/infos")
-    public List<EjectedPilotInfo> getAirSituation(){
+    public List<EjectedPilotInfo> getEjections() {
         return ejectionsImporter.getAllEjections();
     }
 
